@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account — DevOps Orchestrator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        (function () {
+            const token = localStorage.getItem('token');
+            const fromLogout = sessionStorage.getItem('logged_out');
+            if (token && !fromLogout) {
+                window.location.replace('projects.html');
+            }
+        })();
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Figtree:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Figtree', sans-serif;
+            background: #080c14;
+            color: #e2eaf4;
+        }
+
+        .auth-card {
+            background: #0d1320;
+            border: 1px solid #1c2a3a;
+            border-radius: 14px;
+        }
+
+        .form-input {
+            background: #111927;
+            border: 1px solid #1c2a3a;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            width: 100%;
+            transition: .2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 10px;
+            transition: .2s;
+        }
+
+        .pwd-wrapper {
+            position: relative;
+        }
+
+        .pwd-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #5a7090;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+        }
+
+        .pwd-toggle:hover {
+            color: #a0b4c8;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .password-rules {
+            margin-top: 8px;
+            background: #0a0f1a;
+            border: 1px solid #1c2a3a;
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+
+        .password-rules.visible {
+            display: grid;
+        }
+
+        .rule {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #4a6070;
+            transition: color .2s;
+        }
+
+        .rule.pass {
+            color: #4ade80;
+        }
+
+        .rule.fail {
+            color: #f87171;
+        }
+
+        .rule-icon {
+            font-size: 13px;
+            width: 14px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen">
+
+    <div class="auth-card p-8 w-full max-w-md shadow-2xl">
+        <div class="text-center mb-8">
+            <div style="margin:0 auto 16px;width:56px;height:56px;"><svg width="48" height="48" viewBox="0 0 48 48"
+                    fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="48" height="48" rx="12" fill="url(#lg)" />
+                    <path d="M13 25h4.5m0 0l2.5-5 4 10 3-7 2 2.5H35" stroke="white" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="24" cy="24" r="10" stroke="white" stroke-width="1.4" stroke-dasharray="2.5 2"
+                        opacity="0.35" />
+                    <defs>
+                        <linearGradient id="lg" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#3b82f6" />
+                            <stop offset="1" stop-color="#6366f1" />
+                        </linearGradient>
+                    </defs>
+                </svg></div>
+            <h1 class="text-2xl font-bold">Create Account</h1>
+            <p class="text-sm text-gray-400">Join the DevOps AI Orchestrator</p>
+        </div>
+
+        <form id="register-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Full Name</label>
+                <input type="text" id="reg-name" class="form-input" placeholder="John Doe" required>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Email</label>
+                <input type="email" id="reg-email" class="form-input" placeholder="you@company.com" required
+                    oninput="this.style.borderColor='#1c2a3a';document.getElementById('email-error').style.display='none'">
+                <div id="email-error" style="display:none;font-size:11px;color:#f87171;margin-top:5px;"></div>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 mb-1">Password</label>
+                <div class="pwd-wrapper">
+                    <input type="password" id="reg-password" class="form-input" placeholder="Min. 8 characters" required
+                        oninput="checkPassword(this.value)" style="padding-right:42px;">
+                    <button type="button" class="pwd-toggle" onclick="togglePwd()" title="Show/Hide">
+                        <svg id="eye-reg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="password-rules" id="pwd-rules">
+                    <div class="rule" id="r-len"><span class="rule-icon">○</span>8+ characters</div>
+                    <div class="rule" id="r-upper"><span class="rule-icon">○</span>Uppercase (A-Z)</div>
+                    <div class="rule" id="r-lower"><span class="rule-icon">○</span>Lowercase (a-z)</div>
+                    <div class="rule" id="r-num"><span class="rule-icon">○</span>Number (0-9)</div>
+                    <div class="rule" id="r-special"><span class="rule-icon">○</span>Special (!@#$...)</div>
+                </div>
+            </div>
+            <div id="form-error"
+                style="display:none;font-size:12px;color:#f87171;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px;">
+            </div>
+            <div id="pwd-error" style="display:none;font-size:12px;color:#f87171;margin-bottom:8px;"></div>
+            <button type="submit" class="w-full btn-primary mt-4" id="reg-btn">Create Account</button>
+        </form>
+
+        <div class="mt-6 text-center text-sm text-gray-500">
+            Already have an account? <a href="login.html" class="text-blue-400 hover:underline">Sign in</a>
+        </div>
+    </div>
+
+    <script>
+        function togglePwd() {
+            const input = document.getElementById('reg-password');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            document.querySelector('.pwd-toggle').innerHTML = show
+                ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+                : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        }
+
+        function checkPassword(val) {
+            const rules = {
+                'r-len': val.length >= 8,
+                'r-upper': /[A-Z]/.test(val),
+                'r-lower': /[a-z]/.test(val),
+                'r-num': /[0-9]/.test(val),
+                'r-special': /[!@#$%^&*(),.?":{}|<>_\-+=~`]/.test(val),
+            };
+
+            // Show rules box when user starts typing
+            const rulesBox = document.getElementById('pwd-rules');
+            if (val.length > 0) {
+                rulesBox.classList.add('visible');
+            } else {
+                rulesBox.classList.remove('visible');
+            }
+
+            Object.entries(rules).forEach(([id, pass]) => {
+                const el = document.getElementById(id);
+                const icon = el.querySelector('.rule-icon');
+                if (val.length === 0) {
+                    el.className = 'rule';
+                    icon.textContent = '○';
+                } else if (pass) {
+                    el.className = 'rule pass';
+                    icon.textContent = '✓';
+                } else {
+                    el.className = 'rule fail';
+                    icon.textContent = '✗';
+                }
+            });
+
+            // Input border color
+            const input = document.getElementById('reg-password');
+            const allPass = Object.values(rules).every(Boolean);
+            if (val.length === 0) {
+                input.style.borderColor = '#1c2a3a';
+            } else if (allPass) {
+                input.style.borderColor = '#4ade80';
+            } else {
+                input.style.borderColor = '#f87171';
+            }
+
+            return allPass;
+        }
+
+        function showFieldError(id, msg) {
+            const el = document.getElementById(id);
+            if (el) { el.textContent = msg; el.style.display = 'block'; }
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+
+            if (!checkPassword(password)) {
+                document.getElementById('reg-password').style.borderColor = '#f87171';
+                document.getElementById('pwd-rules').style.display = 'grid';
+                return;
+            }
+
+            const btn = document.getElementById('reg-btn');
+            btn.textContent = 'Creating account...';
+            btn.disabled = true;
+
+            const res = await fetch('http://127.0.0.1:8000/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password })
+            });
+
+            if (res.ok) {
+                const email = document.getElementById('reg-email').value;
+                window.location.href = `verify-email.html?email=${encodeURIComponent(email)}&purpose=verify`;
+            } else {
+                const err = await res.json().catch(() => ({}));
+                const detail = err.detail || '';
+
+                // Show inline error under relevant field
+                if (detail.toLowerCase().includes('email')) {
+                    const emailInput = document.getElementById('reg-email');
+                    emailInput.style.borderColor = '#f87171';
+                    showFieldError('email-error', detail);
+                } else if (detail.toLowerCase().includes('password')) {
+                    const pwdInput = document.getElementById('reg-password');
+                    pwdInput.style.borderColor = '#f87171';
+                    showFieldError('pwd-error', detail);
+                } else {
+                    showFieldError('form-error', detail || 'Registration failed. Please try again.');
+                }
+                btn.textContent = 'Create Account';
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

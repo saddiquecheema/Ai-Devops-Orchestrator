@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email — DevOps Orchestrator</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Figtree:wght@400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Figtree', sans-serif;
+            background: #080c14;
+            color: #e2eaf4;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: #0d1320;
+            border: 1px solid #1c2a3a;
+            border-radius: 16px;
+            padding: 36px 32px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, .5);
+            text-align: center;
+        }
+
+        .icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin: 0 auto 20px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, .35);
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 13px;
+            color: #5a7090;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .email-badge {
+            display: inline-block;
+            background: #111927;
+            border: 1px solid #1c2a3a;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 13px;
+            color: #60a5fa;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+
+        /* OTP Input boxes */
+        .otp-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .otp-input {
+            width: 50px;
+            height: 56px;
+            background: #111927;
+            border: 2px solid #1c2a3a;
+            border-radius: 10px;
+            color: #e2eaf4;
+            font-size: 22px;
+            font-weight: 700;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .otp-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, .15);
+        }
+
+        .otp-input.filled {
+            border-color: #3b82f6;
+        }
+
+        .otp-input.error {
+            border-color: #f87171;
+        }
+
+        .error-box {
+            display: none;
+            font-size: 12px;
+            color: #f87171;
+            background: rgba(239, 68, 68, .08);
+            border: 1px solid rgba(239, 68, 68, .2);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+        }
+
+        .success-box {
+            display: none;
+            font-size: 12px;
+            color: #4ade80;
+            background: rgba(34, 197, 94, .08);
+            border: 1px solid rgba(34, 197, 94, .2);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 14px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border: none;
+            border-radius: 9px;
+            padding: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            color: white;
+            width: 100%;
+            cursor: pointer;
+            font-family: 'Figtree', sans-serif;
+            transition: opacity .2s;
+            margin-bottom: 14px;
+        }
+
+        .btn-primary:hover {
+            opacity: .9;
+        }
+
+        .btn-primary:disabled {
+            opacity: .6;
+            cursor: not-allowed;
+        }
+
+        .resend-row {
+            font-size: 13px;
+            color: #5a7090;
+        }
+
+        .resend-btn {
+            background: none;
+            border: none;
+            color: #3b82f6;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: 'Figtree', sans-serif;
+            font-size: 13px;
+        }
+
+        .resend-btn:disabled {
+            color: #3a5070;
+            cursor: not-allowed;
+        }
+
+        .timer {
+            color: #3a5070;
+            font-size: 12px;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <!-- Back button -->
+        <div style="text-align:left;margin-bottom:16px;">
+            <button onclick="history.back()"
+                style="background:none;border:none;color:#5a7090;cursor:pointer;font-size:13px;font-family:'Figtree',sans-serif;display:flex;align-items:center;gap:6px;padding:0;transition:color .2s;"
+                onmouseover="this.style.color='#60a5fa'" onmouseout="this.style.color='#5a7090'">
+                ← Back
+            </button>
+        </div>
+        <div class="icon" style="background:none;box-shadow:none;"><svg width="48" height="48" viewBox="0 0 48 48"
+                fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="48" height="48" rx="14" fill="url(#vlg)" />
+                <path d="M12 16h24l-12 11L12 16z" fill="white" opacity="0.9" />
+                <path d="M12 16v16h24V16" stroke="white" stroke-width="2" stroke-linejoin="round" fill="none" />
+                <defs>
+                    <linearGradient id="vlg" x1="0" y1="0" x2="48" y2="48">
+                        <stop stop-color="#3b82f6" />
+                        <stop offset="1" stop-color="#6366f1" />
+                    </linearGradient>
+                </defs>
+            </svg></div>
+        <h1>Check your email</h1>
+        <p class="subtitle">We sent a 6-digit verification code to</p>
+        <div class="email-badge" id="email-display">your email</div>
+
+        <div class="otp-container">
+            <input class="otp-input" type="text" maxlength="1" id="o0" inputmode="numeric">
+            <input class="otp-input" type="text" maxlength="1" id="o1" inputmode="numeric">
+            <input class="otp-input" type="text" maxlength="1" id="o2" inputmode="numeric">
+            <input class="otp-input" type="text" maxlength="1" id="o3" inputmode="numeric">
+            <input class="otp-input" type="text" maxlength="1" id="o4" inputmode="numeric">
+            <input class="otp-input" type="text" maxlength="1" id="o5" inputmode="numeric">
+        </div>
+
+        <div class="error-box" id="err-box"></div>
+        <div class="success-box" id="ok-box"></div>
+
+        <button class="btn-primary" id="verify-btn" onclick="verifyCode()">Verify Email</button>
+
+        <div class="resend-row">
+            Didn't receive the code?
+            <button class="resend-btn" id="resend-btn" onclick="resendCode()">Resend</button>
+            <div class="timer" id="timer-text"></div>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const email = params.get('email') || '';
+        const purpose = params.get('purpose') || 'verify'; // verify or reset
+
+        if (!email) window.location.replace('login.html');
+        document.getElementById('email-display').textContent = email;
+
+        // ── OTP Input navigation ──────────────────────────────────────────
+        const inputs = Array.from({ length: 6 }, (_, i) => document.getElementById(`o${i}`));
+
+        inputs.forEach((input, i) => {
+            input.addEventListener('input', (e) => {
+                const val = e.target.value.replace(/\D/g, '');
+                e.target.value = val;
+                if (val) {
+                    input.classList.add('filled');
+                    if (i < 5) inputs[i + 1].focus();
+                    // Auto verify when all filled
+                    if (i === 5) verifyCode();
+                }
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !input.value && i > 0) {
+                    inputs[i - 1].focus();
+                    inputs[i - 1].value = '';
+                    inputs[i - 1].classList.remove('filled');
+                }
+            });
+            input.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                text.split('').forEach((ch, idx) => {
+                    if (inputs[idx]) { inputs[idx].value = ch; inputs[idx].classList.add('filled'); }
+                });
+                if (text.length === 6) verifyCode();
+            });
+        });
+
+        inputs[0].focus();
+
+        // ── Verify ────────────────────────────────────────────────────────
+        async function verifyCode() {
+            const code = inputs.map(i => i.value).join('');
+            if (code.length < 6) return;
+
+            const btn = document.getElementById('verify-btn');
+            const err = document.getElementById('err-box');
+            const ok = document.getElementById('ok-box');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+            err.style.display = 'none';
+
+            const endpoint = purpose === 'reset'
+                ? null  // reset goes to reset-password page
+                : 'http://127.0.0.1:8000/auth/verify-email';
+
+            if (purpose === 'reset') {
+                // For reset: go to reset-password page with code
+                window.location.href = `reset-password.html?email=${encodeURIComponent(email)}&code=${code}`;
+                return;
+            }
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    ok.textContent = '✓ Email verified! Redirecting to login...';
+                    ok.style.display = 'block';
+                    inputs.forEach(i => { i.classList.remove('error'); i.classList.add('filled'); i.style.borderColor = '#4ade80'; });
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                } else {
+                    err.textContent = data.detail || 'Invalid code. Please try again.';
+                    err.style.display = 'block';
+                    inputs.forEach(i => { i.classList.add('error'); i.style.borderColor = '#f87171'; });
+                    btn.disabled = false;
+                    btn.textContent = 'Verify Email';
+                }
+            } catch (e) {
+                err.textContent = 'Connection error. Please try again.';
+                err.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Verify Email';
+            }
+        }
+
+        // ── Resend with timer ─────────────────────────────────────────────
+        let timerInterval = null;
+
+        async function resendCode() {
+            const btn = document.getElementById('resend-btn');
+            btn.disabled = true;
+            startTimer(60);
+
+            const endpoint = purpose === 'reset'
+                ? 'http://127.0.0.1:8000/auth/forgot-password'
+                : 'http://127.0.0.1:8000/auth/resend-verification';
+
+            await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            });
+
+            // Clear inputs
+            inputs.forEach(i => { i.value = ''; i.classList.remove('filled', 'error'); i.style.borderColor = ''; });
+            inputs[0].focus();
+        }
+
+        function startTimer(seconds) {
+            const timerText = document.getElementById('timer-text');
+            const btn = document.getElementById('resend-btn');
+            let remaining = seconds;
+
+            timerText.textContent = `Resend in ${remaining}s`;
+            timerInterval = setInterval(() => {
+                remaining--;
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerText.textContent = '';
+                    btn.disabled = false;
+                } else {
+                    timerText.textContent = `Resend in ${remaining}s`;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+
+</html>

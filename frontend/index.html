@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevOps AI Orchestrator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <!-- Auth Guard: Agar token nahi hai toh login page par bhejo -->
+    <script>
+        (function () {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=Figtree:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        :root {
+            --bg: #080c14;
+            --surface: #0d1320;
+            --surface2: #111927;
+            --border: #1c2a3a;
+            --border2: #243447;
+            --text: #e2eaf4;
+            --muted: #5a7090;
+            --accent: #3b82f6;
+            --accent2: #6366f1;
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --purple: #a855f7;
+            --cyan: #06b6d4;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Figtree', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Grid noise background ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(59, 130, 246, .03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, .03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .syne {
+            font-family: 'Syne', sans-serif;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border2);
+            border-radius: 4px;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color .25s, box-shadow .25s;
+        }
+
+        .card:hover {
+            border-color: var(--border2);
+            box-shadow: 0 0 28px rgba(59, 130, 246, .07);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(59, 130, 246, .3), transparent);
+        }
+
+        /* ── Stat cards ── */
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            position: relative;
+            overflow: hidden;
+            transition: all .25s;
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border2);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, .4);
+        }
+
+        .stat-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            opacity: .06;
+            transform: translate(20px, 20px);
+        }
+
+        .stat-card.blue::after {
+            background: var(--accent);
+        }
+
+        .stat-card.amber::after {
+            background: var(--amber);
+        }
+
+        .stat-card.green::after {
+            background: var(--green);
+        }
+
+        .stat-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        /* ── Priority badges ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .4px;
+            text-transform: uppercase;
+        }
+
+        .badge-high {
+            background: rgba(239, 68, 68, .15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, .2);
+        }
+
+        .badge-medium {
+            background: rgba(245, 158, 11, .15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, .2);
+        }
+
+        .badge-low {
+            background: rgba(34, 197, 94, .15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, .2);
+        }
+
+        .badge-critical {
+            background: rgba(168, 85, 247, .15);
+            color: #c084fc;
+            border: 1px solid rgba(168, 85, 247, .2);
+        }
+
+        /* ── Ticket card ── */
+        .ticket-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 14px 16px;
+            cursor: pointer;
+            transition: all .2s;
+            position: relative;
+        }
+
+        .ticket-card:hover {
+            border-color: var(--accent);
+            background: #131f32;
+            transform: translateX(3px);
+        }
+
+        .ticket-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 12px;
+            bottom: 12px;
+            width: 3px;
+            border-radius: 0 3px 3px 0;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity .2s;
+        }
+
+        .ticket-card:hover::before {
+            opacity: 1;
+        }
+
+        /* ── Activity event ── */
+        .event-item {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn .4s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-12px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .event-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 5px;
+            flex-shrink: 0;
+        }
+
+        /* ── Terminal ── */
+        .terminal {
+            background: #050810;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 6px;
+        }
+
+        .terminal-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .log-line {
+            display: flex;
+            gap: 10px;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, .02);
+            font-size: 11.5px;
+            animation: fadeUp .3s ease both;
+        }
+
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .log-time {
+            color: #2d4a6a;
+            flex-shrink: 0;
+            width: 72px;
+        }
+
+        .log-tag {
+            flex-shrink: 0;
+            width: 60px;
+            font-weight: 600;
+        }
+
+        .log-info {
+            color: var(--accent);
+        }
+
+        .log-success {
+            color: var(--green);
+        }
+
+        .log-warn {
+            color: var(--amber);
+        }
+
+        .log-error {
+            color: var(--red);
+        }
+
+        /* ── Connection badge ── */
+        .conn-badge {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: .3px;
+            transition: all .3s;
+        }
+
+        .conn-live {
+            background: rgba(34, 197, 94, .1);
+            border: 1px solid rgba(34, 197, 94, .25);
+            color: #4ade80;
+        }
+
+        .conn-dead {
+            background: rgba(239, 68, 68, .1);
+            border: 1px solid rgba(239, 68, 68, .2);
+            color: #f87171;
+        }
+
+        .conn-loading {
+            background: rgba(90, 112, 144, .1);
+            border: 1px solid var(--border);
+            color: var(--muted);
+        }
+
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s ease infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: .5;
+                transform: scale(.8);
+            }
+        }
+
+        /* ── Skeleton ── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        @keyframes shimmer {
+            from {
+                background-position: 200% 0;
+            }
+
+            to {
+                background-position: -200% 0;
+            }
+        }
+
+        /* ── Toast ── */
+        #toast-container {
+            position: fixed;
+            bottom: 28px;
+            right: 28px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 12px;
+            padding: 14px 18px;
+            min-width: 280px;
+            max-width: 360px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, .5);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: toastIn .4s cubic-bezier(.16, 1, .3, 1) both;
+        }
+
+        .toast.removing {
+            animation: toastOut .3s ease forwards;
+        }
+
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+        }
+
+        .toast-icon {
+            font-size: 16px;
+            margin-top: 1px;
+            flex-shrink: 0;
+        }
+
+        /* ── Slide-over panel ── */
+        #detail-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 420px;
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform .35s cubic-bezier(.16, 1, .3, 1);
+            overflow-y: auto;
+            box-shadow: -20px 0 60px rgba(0, 0, 0, .5);
+        }
+
+        #detail-panel.open {
+            transform: translateX(0);
+        }
+
+        #panel-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .5);
+            backdrop-filter: blur(4px);
+            z-index: 99;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .3s;
+        }
+
+        #panel-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* ── Chart canvas ── */
+        .chart-wrap {
+            position: relative;
+            height: 90px;
+        }
+
+        /* ── Section header ── */
+        .section-head {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        /* ── Empty state ── */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px 24px;
+            gap: 12px;
+            color: var(--muted);
+        }
+
+        .empty-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        /* ── Glow effect ── */
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(59, 130, 246, .15);
+        }
+
+        .glow-green {
+            box-shadow: 0 0 20px rgba(34, 197, 94, .15);
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ════════════════════════════════ TOAST CONTAINER ════════════════════════════ -->
+    <div id="toast-container"></div>
+
+    <!-- ════════════════════════════════ PANEL OVERLAY ══════════════════════════════ -->
+    <div id="panel-overlay" onclick="closePanel()"></div>
+
+    <!-- ════════════════════════════════ DETAIL PANEL ═══════════════════════════════ -->
+    <div id="detail-panel">
+        <div
+            style="padding:20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+            <span class="syne" style="font-size:15px; font-weight:700;">Ticket Details</span>
+            <button onclick="closePanel()"
+                style="width:30px;height:30px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div id="panel-body" style="padding:24px;"></div>
+    </div>
+
+    <!-- ════════════════════════════════ HEADER ═════════════════════════════════════ -->
+    <header
+        style="position:sticky;top:0;z-index:50;border-bottom:1px solid var(--border);background:rgba(8,12,20,.85);backdrop-filter:blur(16px);">
+        <div
+            style="max-width:1400px;margin:0 auto;padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;">
+            <!-- Logo -->
+            <div style="display:flex;align-items:center;gap:12px;">
+                <div
+                    style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-size:16px;color:white;box-shadow:0 4px 16px rgba(59,130,246,.4);">
+                    <i class="fa-solid fa-robot"></i>
+                </div>
+                <div>
+                    <div class="syne" style="font-size:15px;font-weight:700;line-height:1.1;">DevOps AI Orchestrator
+                    </div>
+                    <div style="font-size:11px;color:var(--muted);">Live Agent Monitoring</div>
+                </div>
+            </div>
+            <!-- Nav pills -->
+            <div style="display:flex;align-items:center;gap:6px;">
+                <button class="nav-pill active" onclick="setView('dashboard')" id="pill-dashboard">
+                    <i class="fa-solid fa-gauge-high"></i> Dashboard
+                </button>
+                <button class="nav-pill" onclick="setView('events')" id="pill-events">
+                    <i class="fa-solid fa-bolt"></i> Events
+                </button>
+                <button class="nav-pill" onclick="setView('tickets')" id="pill-tickets">
+                    <i class="fa-solid fa-ticket"></i> Tickets
+                </button>
+            </div>
+            <!-- Status + Project Switcher + Logout -->
+            <div style="display:flex;align-items:center;gap:10px;">
+                <div id="conn-badge" class="conn-badge conn-loading">
+                    <span class="pulse-dot"></span>
+                    <span id="conn-text">Connecting…</span>
+                </div>
+                <button onclick="switchProject()" title="Switch Project"
+                    style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);color:#60a5fa;cursor:pointer;transition:.2s;"
+                    onmouseover="this.style.background='rgba(59,130,246,.18)'"
+                    onmouseout="this.style.background='rgba(59,130,246,.08)'">
+                    <i class="fa-solid fa-folder-open"></i> <span id="active-project-name">Projects</span>
+                </button>
+                <button onclick="logout()" title="Logout"
+                    style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#f87171;cursor:pointer;transition:.2s;"
+                    onmouseover="this.style.background='rgba(239,68,68,.18)'"
+                    onmouseout="this.style.background='rgba(239,68,68,.08)'">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <style>
+        .nav-pill {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-pill:hover {
+            color: var(--text);
+            background: var(--surface2);
+        }
+
+        .nav-pill.active {
+            background: var(--surface2);
+            border-color: var(--border2);
+            color: var(--text);
+        }
+    </style>
+
+    <!-- ════════════════════════════════ MAIN ═══════════════════════════════════════ -->
+    <main id="main-content" style="max-width:1400px;margin:0 auto;padding:28px 24px;position:relative;z-index:1;">
+
+        <!-- ── VIEW: DASHBOARD ── -->
+        <div id="view-dashboard">
+
+            <!-- Stats row -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+
+                <div class="stat-card blue">
+                    <div class="stat-icon" style="background:rgba(59,130,246,.12);color:#60a5fa;">
+                        <i class="fa-solid fa-code-branch"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div
+                            style="font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+                            Git Events</div>
+                        <div id="stat-events" style="font-size:28px;font-weight:700;line-height:1.1;" class="syne">0
+                        </div>
+                        <div id="stat-events-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">No activity
+                            yet</div>
+                    </div>
+                    <div class="chart-wrap" style="width:80px;">
+                        <canvas id="chart-events"></canvas>
+                    </div>
+                </div>
+
+                <div class="stat-card amber">
+                    <div class="stat-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;">
+                        <i class="fa-solid fa-ticket"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div
+                            style="font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+                            Jira Tickets</div>
+                        <div id="stat-tickets" style="font-size:28px;font-weight:700;line-height:1.1;" class="syne">0
+                        </div>
+                        <div id="stat-tickets-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">
+                            Auto-created today</div>
+                    </div>
+                    <div class="chart-wrap" style="width:80px;">
+                        <canvas id="chart-tickets"></canvas>
+                    </div>
+                </div>
+
+                <div class="stat-card green">
+                    <div class="stat-icon" style="background:rgba(34,197,94,.12);color:#4ade80;">
+                        <i class="fa-brands fa-slack"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div
+                            style="font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.5px;">
+                            Slack Alerts</div>
+                        <div id="stat-slack" style="font-size:28px;font-weight:700;line-height:1.1;" class="syne">0
+                        </div>
+                        <div id="stat-slack-sub" style="font-size:11px;color:var(--muted);margin-top:2px;">Notifications
+                            sent</div>
+                    </div>
+                    <div class="chart-wrap" style="width:80px;">
+                        <canvas id="chart-slack"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Main grid -->
+            <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;">
+
+                <!-- Left column -->
+                <div style="display:flex;flex-direction:column;gap:20px;">
+
+                    <!-- Activity feed -->
+                    <div class="card">
+                        <div class="section-head">
+                            <span class="section-title">
+                                <div class="section-icon" style="background:rgba(99,102,241,.12);color:#818cf8;"><i
+                                        class="fa-solid fa-activity"></i></div>
+                                Live Activity Feed
+                            </span>
+                            <span id="activity-count"
+                                style="font-size:11px;color:var(--muted);background:var(--surface2);padding:3px 8px;border-radius:20px;border:1px solid var(--border);">0
+                                events</span>
+                        </div>
+                        <div id="activity-feed"
+                            style="padding:16px;display:flex;flex-direction:column;gap:8px;min-height:200px;max-height:320px;overflow-y:auto;"
+                            class="custom-scrollbar">
+                            <!-- Empty state -->
+                            <div id="feed-empty" class="empty-state">
+                                <div class="empty-icon"><i class="fa-solid fa-satellite-dish"
+                                        style="color:var(--muted);"></i></div>
+                                <div style="font-size:13px;font-weight:600;">Waiting for events</div>
+                                <div style="font-size:12px;text-align:center;line-height:1.5;">Push code, open a PR, or
+                                    send a<br />Slack message to see live activity.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Terminal -->
+                    <div class="terminal">
+                        <div class="terminal-header">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div class="terminal-dots">
+                                    <span style="background:#ff5f57;"></span>
+                                    <span style="background:#ffbd2e;"></span>
+                                    <span style="background:#28c840;"></span>
+                                </div>
+                                <span class="mono" style="font-size:11px;color:var(--muted);">system.log</span>
+                            </div>
+                            <button onclick="clearLogs()"
+                                style="font-size:11px;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 8px;border-radius:4px;transition:.2s;"
+                                onmouseover="this.style.color='white'"
+                                onmouseout="this.style.color='var(--muted)'">Clear</button>
+                        </div>
+                        <div id="terminal-logs"
+                            style="padding:14px 16px;height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:1px;"
+                            class="custom-scrollbar mono">
+                            <div class="log-line">
+                                <span class="log-time mono">--:--:--</span>
+                                <span class="log-tag log-info mono">SYS</span>
+                                <span style="color:var(--muted);">Orchestrator initializing…</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right column — Jira panel -->
+                <div class="card" style="display:flex;flex-direction:column;max-height:580px;">
+                    <div class="section-head">
+                        <span class="section-title">
+                            <div class="section-icon" style="background:rgba(245,158,11,.12);color:#fbbf24;"><i
+                                    class="fa-solid fa-square-check"></i></div>
+                            Auto Jira Tickets
+                        </span>
+                        <span id="ticket-badge"
+                            style="font-size:10px;color:var(--amber);background:rgba(245,158,11,.12);padding:3px 8px;border-radius:20px;border:1px solid rgba(245,158,11,.2);font-weight:600;">0
+                            total</span>
+                    </div>
+
+                    <!-- Filter row -->
+                    <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:6px;"
+                        id="priority-filters">
+                        <button class="filter-btn active" data-filter="all"
+                            onclick="filterTickets('all',this)">All</button>
+                        <button class="filter-btn" data-filter="critical"
+                            onclick="filterTickets('critical',this)">Critical</button>
+                        <button class="filter-btn" data-filter="high" onclick="filterTickets('high',this)">High</button>
+                        <button class="filter-btn" data-filter="medium"
+                            onclick="filterTickets('medium',this)">Medium</button>
+                        <button class="filter-btn" data-filter="low" onclick="filterTickets('low',this)">Low</button>
+                    </div>
+
+                    <div id="jira-tickets-container"
+                        style="flex:1;padding:14px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;"
+                        class="custom-scrollbar">
+                        <!-- Skeleton loaders -->
+                        <div id="ticket-skeletons" style="display:flex;flex-direction:column;gap:8px;">
+                            <div class="skeleton" style="height:68px;"></div>
+                            <div class="skeleton" style="height:68px;opacity:.7;"></div>
+                            <div class="skeleton" style="height:68px;opacity:.4;"></div>
+                        </div>
+                        <!-- Empty state (hidden initially) -->
+                        <div id="tickets-empty" class="empty-state" style="display:none;">
+                            <div class="empty-icon"><i class="fa-solid fa-ticket" style="color:var(--muted);"></i></div>
+                            <div style="font-size:13px;font-weight:600;">No tickets yet</div>
+                            <div style="font-size:12px;">Tickets auto-create from Slack messages</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ── VIEW: EVENTS ── -->
+        <div id="view-events" style="display:none;">
+            <div class="card">
+                <div class="section-head">
+                    <span class="section-title"><i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> All
+                        Events</span>
+                </div>
+                <div id="events-list" style="padding:16px;display:flex;flex-direction:column;gap:8px;min-height:400px;"
+                    class="custom-scrollbar"></div>
+            </div>
+        </div>
+
+        <!-- ── VIEW: TICKETS ── -->
+        <div id="view-tickets" style="display:none;">
+            <div class="card">
+                <div class="section-head">
+                    <span class="section-title"><i class="fa-solid fa-ticket" style="color:var(--amber);"></i> All Jira
+                        Tickets</span>
+                </div>
+                <div id="tickets-list"
+                    style="padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;min-height:400px;">
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <style>
+        .filter-btn {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all .2s;
+        }
+
+        .filter-btn:hover {
+            color: var(--text);
+            border-color: var(--border2);
+        }
+
+        .filter-btn.active {
+            background: var(--surface2);
+            border-color: var(--border2);
+            color: var(--text);
+        }
+    </style>
+
+    <!-- ════════════════════════════════ SCRIPTS ════════════════════════════════════ -->
+    <script>
+        /* ─────────────────────────────────────────────────────────────────────────────
+           STATE
+        ───────────────────────────────────────────────────────────────────────────── */
+        const state = {
+            events: 0,
+            tickets: 0,
+            slack: 0,
+            allTickets: [],
+            allEvents: [],
+            currentFilter: 'all',
+            skeletonDone: false,
+        };
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           MINI SPARKLINE CHARTS
+        ───────────────────────────────────────────────────────────────────────────── */
+        function makeSparkline(id, color, data = [0, 0, 0, 0, 0, 0, 0]) {
+            const ctx = document.getElementById(id);
+            if (!ctx) return null;
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['', '', '', '', '', '', ''],
+                    datasets: [{
+                        data, borderColor: color, borderWidth: 2, fill: true,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', ',0.12)'),
+                        tension: .45, pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: { x: { display: false }, y: { display: false, min: 0 } },
+                    animation: { duration: 400 }
+                }
+            });
+        }
+
+        const charts = {
+            events: null,
+            tickets: null,
+            slack: null,
+        };
+
+        window.addEventListener('load', () => {
+            charts.events = makeSparkline('chart-events', 'rgb(96,165,250)');
+            charts.tickets = makeSparkline('chart-tickets', 'rgb(251,191,36)');
+            charts.slack = makeSparkline('chart-slack', 'rgb(74,222,128)');
+
+            // After 1.5s remove skeleton, show empty
+            setTimeout(clearSkeletons, 1500);
+        });
+
+        function clearSkeletons() {
+            if (state.skeletonDone) return;
+            state.skeletonDone = true;
+            const sk = document.getElementById('ticket-skeletons');
+            if (sk) sk.remove();
+            if (state.allTickets.length === 0) {
+                document.getElementById('tickets-empty').style.display = 'flex';
+            }
+        }
+
+        function pushToChart(chart, value) {
+            if (!chart) return;
+            const ds = chart.data.datasets[0];
+            ds.data.push(value);
+            if (ds.data.length > 10) ds.data.shift();
+            chart.update('none');
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           WEBSOCKET
+        ───────────────────────────────────────────────────────────────────────────── */
+        let socket;
+        function connectWebSocket() {
+            socket = new WebSocket('ws://127.0.0.1:8000/ws');
+
+            socket.onopen = () => {
+                setConnStatus('live');
+                addLog('SYS', 'WebSocket connected', 'success');
+            };
+
+            socket.onclose = () => {
+                setConnStatus('dead');
+                addLog('SYS', 'Connection lost — retrying in 3s', 'warn');
+                setTimeout(connectWebSocket, 3000);
+            };
+
+            socket.onerror = () => addLog('SYS', 'WebSocket error', 'error');
+
+            socket.onmessage = (raw) => {
+                let data;
+                try { data = JSON.parse(raw.data); }
+                catch { addLog('SYS', 'Invalid message received', 'warn'); return; }
+
+                console.log('[WS IN]', data.type, data);
+                const t = data.type || '';
+
+                // jira_ticket OR jira_issue_created — both mean a Jira ticket was created
+                if (t === 'jira_ticket' || t === 'jira_issue_created') {
+                    handleJiraTicket(data);
+
+                    // slack_card — push/PR rich card with details:{pusher,branch,repo,message}
+                } else if (t === 'slack_card') {
+                    handleSlackCard(data);
+
+                    // slack_notification — generic Slack notification sent
+                } else if (t === 'slack_notification') {
+                    handleSlackNotification(data);
+
+                    // webhook — raw git/GitHub event
+                } else if (t === 'webhook') {
+                    handleGitEvent(data);
+
+                    // pipeline_complete — finalize_node broadcasts this when agent finishes
+                } else if (t === 'pipeline_complete') {
+                    handlePipelineComplete(data);
+
+                    // pipeline_error
+                } else if (t === 'pipeline_error') {
+                    addLog('ERR', data.message || 'Pipeline error', 'error');
+                    showToast('Pipeline Error', data.message || 'An error occurred', 'error');
+                    addActivityEvent('git', data.message || 'Pipeline failed', null);
+
+                    // fallback
+                } else {
+                    addLog('MSG', data.message || JSON.stringify(data).slice(0, 80), 'info');
+                }
+            };
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           HANDLERS
+        ───────────────────────────────────────────────────────────────────────────── */
+        function handleJiraTicket(data) {
+            clearSkeletons();
+            state.tickets++;
+            document.getElementById('stat-tickets').textContent = state.tickets;
+            document.getElementById('stat-tickets-sub').textContent = `${state.tickets} auto-created today`;
+            document.getElementById('ticket-badge').textContent = `${state.tickets} total`;
+            pushToChart(charts.tickets, state.tickets);
+
+            const ticket = {
+                key: data.key || 'SCRUM-?',
+                title: data.title || 'Untitled',
+                priority: data.priority || 'Medium',
+                summary: data.summary || '',
+                type: data.issue_type || 'Task',
+                reporter: data.reporter || 'System',
+                url: data.url || '#',
+                ts: new Date().toLocaleTimeString(),
+            };
+            state.allTickets.unshift(ticket);
+            renderTicketCard(ticket, true);
+            addActivityEvent('ticket', `Jira ${ticket.key}: ${ticket.title}`, ticket.priority);
+            addLog('JIRA', `Created ${ticket.key} — ${ticket.title.slice(0, 40)}`, 'success');
+            showToast(`Ticket Created: ${ticket.key}`, ticket.title, 'ticket');
+            document.getElementById('tickets-empty').style.display = 'none';
+        }
+
+        // ── slack_card: push/PR with details object ──────────────────────────────────
+        function handleSlackCard(data) {
+            state.slack++;
+            document.getElementById('stat-slack').textContent = state.slack;
+            document.getElementById('stat-slack-sub').textContent = `${state.slack} notifications sent`;
+            pushToChart(charts.slack, state.slack);
+
+            const d = data.details || {};
+            const title = data.title || 'Slack Alert';
+            // Extract meaningful text from details
+            const pusher = d.pusher || d.author || '';
+            const branch = d.branch || '';
+            const repo = d.repo || '';
+            const commitMsg = d.message || d.commit_msg || '';
+
+            let displayText = title;
+            if (pusher && branch) displayText = `${pusher} pushed to ${branch}`;
+            else if (commitMsg) displayText = commitMsg.slice(0, 60);
+
+            addActivityEvent('slack', displayText, null);
+            addLog('SLAK', `${title}${pusher ? ' — by ' + pusher : ''}${branch ? ' on ' + branch : ''}`, 'info');
+            showToast('Slack Alert', displayText, 'slack');
+        }
+
+        // ── slack_notification: generic Slack notification ────────────────────────────
+        function handleSlackNotification(data) {
+            state.slack++;
+            document.getElementById('stat-slack').textContent = state.slack;
+            document.getElementById('stat-slack-sub').textContent = `${state.slack} notifications sent`;
+            pushToChart(charts.slack, state.slack);
+
+            // data.event = EventType string, data.message = description
+            const eventLabel = (data.event || '').replace('github.', '').replace('jira.', '').replace('slack.', '').replace('_', ' ');
+            const msg = data.message || `Slack alert: ${eventLabel}`;
+            addActivityEvent('slack', msg, null);
+            addLog('SLAK', msg.slice(0, 60), 'info');
+        }
+
+        // ── pipeline_complete: finalize_node broadcasts this ─────────────────────────
+        function handlePipelineComplete(data) {
+            // pipeline_complete means the whole agent pipeline finished
+            // It's NOT a new Git event — just a status update, so we only log it
+            const msg = data.message || (data.success ? 'Pipeline completed' : 'Pipeline failed');
+            addLog('PIPE', msg, data.success ? 'success' : 'warn');
+
+            // Show which actions were taken (last 3)
+            if (data.actions && data.actions.length > 0) {
+                addLog('PIPE', `Actions: ${data.actions.join(', ')}`, 'info');
+            }
+        }
+
+        function handleGitEvent(data) {
+            state.events++;
+            document.getElementById('stat-events').textContent = state.events;
+            document.getElementById('stat-events-sub').textContent = `${state.events} events processed`;
+            pushToChart(charts.events, state.events);
+
+            const msg = data.message || `Git event: ${data.type}`;
+            addActivityEvent('git', msg, null);
+            addLog('GIT', msg.slice(0, 60), 'info');
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           TICKET CARD RENDER
+        ───────────────────────────────────────────────────────────────────────────── */
+        function getBadgeClass(p) {
+            if (!p) return 'badge-medium';
+            const pLow = p.toLowerCase();
+            if (pLow === 'critical' || pLow === 'highest') return 'badge-critical';
+            if (pLow === 'high') return 'badge-high';
+            if (pLow === 'low' || pLow === 'lowest') return 'badge-low';
+            return 'badge-medium';
+        }
+
+        function getPriorityIcon(p) {
+            if (!p) return '●';
+            const pLow = p.toLowerCase();
+            if (pLow === 'critical' || pLow === 'highest') return '▲▲';
+            if (pLow === 'high') return '▲';
+            if (pLow === 'low' || pLow === 'lowest') return '▼';
+            return '●';
+        }
+
+        function renderTicketCard(t, animate = false) {
+            const container = document.getElementById('jira-tickets-container');
+            const el = document.createElement('div');
+            el.className = 'ticket-card';
+            el.dataset.priority = (t.priority || 'medium').toLowerCase();
+            el.dataset.key = t.key;
+
+            if (animate) el.style.animation = 'slideIn .4s cubic-bezier(.16,1,.3,1) both';
+
+            el.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span class="mono" style="font-size:11px;color:var(--accent);font-weight:600;">${t.key}</span>
+        <span style="font-size:10px;color:var(--muted);background:var(--surface);padding:1px 6px;border-radius:4px;border:1px solid var(--border);">${t.type}</span>
+      </div>
+      <span class="badge ${getBadgeClass(t.priority)}">${getPriorityIcon(t.priority)} ${t.priority || 'Medium'}</span>
+    </div>
+    <p style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:6px;line-height:1.4;">${t.title}</p>
+    <p style="font-size:11px;color:var(--muted);line-height:1.4;border-top:1px solid var(--border);padding-top:6px;">${t.summary.slice(0, 90)}${t.summary.length > 90 ? '…' : ''}</p>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+      <span style="font-size:10px;color:var(--muted);">by ${t.reporter} · ${t.ts}</span>
+      <span style="font-size:10px;color:var(--accent);">Click for details →</span>
+    </div>`;
+
+            el.onclick = () => openPanel(t);
+
+            // Apply current filter
+            const f = state.currentFilter;
+            if (f !== 'all' && el.dataset.priority !== f) el.style.display = 'none';
+
+            container.prepend(el);
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           ACTIVITY FEED
+        ───────────────────────────────────────────────────────────────────────────── */
+        let activityCount = 0;
+        function addActivityEvent(type, text, priority, customTime = null) {
+            activityCount++;
+            document.getElementById('activity-count').textContent = `${activityCount} events`;
+
+            const empty = document.getElementById('feed-empty');
+            if (empty) empty.remove();
+
+            const colors = { git: '#60a5fa', slack: '#4ade80', ticket: '#fbbf24' };
+            const icons = { git: 'fa-code-branch', slack: 'fa-brands fa-slack', ticket: 'fa-ticket' };
+
+            const el = document.createElement('div');
+            el.className = 'event-item';
+            const displayTime = customTime || new Date().toLocaleTimeString();
+            el.innerHTML = `
+    <div class="event-dot" style="background:${colors[type] || '#5a7090'};box-shadow:0 0 6px ${colors[type] || '#5a7090'};"></div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${text}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;">${displayTime} · ${type.toUpperCase()}</div>
+    </div>
+    ${priority ? `<span class="badge ${getBadgeClass(priority)}">${priority}</span>` : ''}`;
+
+            const feed = document.getElementById('activity-feed');
+            feed.prepend(el);
+
+            // Keep max 50
+            while (feed.children.length > 50) feed.removeChild(feed.lastChild);
+
+            // Also add to events view
+            const evList = document.getElementById('events-list');
+            const clone = el.cloneNode(true);
+            evList.prepend(clone);
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           TERMINAL
+        ───────────────────────────────────────────────────────────────────────────── */
+        function addLog(tag, msg, level = 'info') {
+            const terminal = document.getElementById('terminal-logs');
+            const el = document.createElement('div');
+            el.className = 'log-line mono';
+            const levelClass = { info: 'log-info', success: 'log-success', warn: 'log-warn', error: 'log-error' }[level] || 'log-info';
+            el.innerHTML = `
+    <span class="log-time">${new Date().toLocaleTimeString()}</span>
+    <span class="log-tag ${levelClass}">${tag.padEnd(4)}</span>
+    <span style="color:${level === 'error' ? 'var(--red)' : level === 'warn' ? 'var(--amber)' : level === 'success' ? 'var(--green)' : 'var(--muted)'};">${msg}</span>`;
+            terminal.appendChild(el);
+            terminal.scrollTop = terminal.scrollHeight;
+            while (terminal.children.length > 200) terminal.removeChild(terminal.firstChild);
+        }
+
+        function clearLogs() {
+            document.getElementById('terminal-logs').innerHTML = '';
+            addLog('SYS', 'Log cleared', 'info');
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           CONNECTION STATUS
+        ───────────────────────────────────────────────────────────────────────────── */
+        function setConnStatus(s) {
+            const badge = document.getElementById('conn-badge');
+            const text = document.getElementById('conn-text');
+            badge.className = 'conn-badge';
+            if (s === 'live') {
+                badge.classList.add('conn-live');
+                badge.innerHTML = '<span class="pulse-dot"></span><span>Live Active</span>';
+            } else if (s === 'dead') {
+                badge.classList.add('conn-dead');
+                badge.innerHTML = '<i class="fa-solid fa-circle-xmark" style="font-size:11px;"></i><span>Disconnected</span>';
+            } else {
+                badge.classList.add('conn-loading');
+                badge.innerHTML = '<span class="pulse-dot"></span><span>Connecting…</span>';
+            }
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           TOAST NOTIFICATIONS
+        ───────────────────────────────────────────────────────────────────────────── */
+        function showToast(title, message, type = 'info') {
+            const icons = { ticket: '🎫', error: '🚨', success: '✅', info: 'ℹ️', slack: '💬', git: '🔀' };
+            const colors = { ticket: 'var(--amber)', error: 'var(--red)', success: 'var(--green)', info: 'var(--accent)' };
+
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+    <div class="toast-icon">${icons[type] || 'ℹ️'}</div>
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:12px;font-weight:700;color:${colors[type] || 'var(--text)'};">${title}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4;">${message.slice(0, 80)}</div>
+    </div>
+    <button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 0 0 8px;">✕</button>`;
+
+            document.getElementById('toast-container').appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('removing');
+                setTimeout(() => toast.remove(), 300);
+            }, 4500);
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           DETAIL PANEL (SLIDE-OVER)
+        ───────────────────────────────────────────────────────────────────────────── */
+        function openPanel(ticket) {
+            const body = document.getElementById('panel-body');
+            const badgeClass = getBadgeClass(ticket.priority);
+
+            body.innerHTML = `
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <span class="mono" style="font-size:13px;color:var(--accent);font-weight:700;">${ticket.key}</span>
+        <span class="badge ${badgeClass}">${ticket.priority || 'Medium'}</span>
+        <span style="font-size:11px;color:var(--muted);background:var(--surface2);padding:2px 8px;border-radius:5px;border:1px solid var(--border);">${ticket.type}</span>
+      </div>
+      <h2 style="font-size:16px;font-weight:700;line-height:1.4;margin-bottom:4px;">${ticket.title}</h2>
+      <p style="font-size:12px;color:var(--muted);">Reported by ${ticket.reporter} · ${ticket.ts}</p>
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">AI Summary</div>
+      <p style="font-size:13px;line-height:1.6;color:var(--text);">${ticket.summary || 'No summary available.'}</p>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">STATUS</div>
+        <select onchange="updateStatus(this.value)" style="width:100%;background:var(--surface);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px;font-size:12px;cursor:pointer;">
+          <option>To Do</option>
+          <option>In Progress</option>
+          <option>In Review</option>
+          <option>Done</option>
+        </select>
+      </div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;">PRIORITY</div>
+        <div class="badge ${badgeClass}" style="margin-top:6px;">${getPriorityIcon(ticket.priority)} ${ticket.priority}</div>
+      </div>
+    </div>
+
+    ${ticket.url && ticket.url !== '#' ? `
+    <a href="${ticket.url}" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:10px;color:var(--accent);font-size:13px;font-weight:600;text-decoration:none;transition:.2s;margin-bottom:10px;" onmouseover="this.style.background='rgba(59,130,246,.2)'" onmouseout="this.style.background='rgba(59,130,246,.1)'">
+      <i class="fa-solid fa-external-link"></i> Open in Jira
+    </a>` : ''}
+
+    <button onclick="closePanel()" style="width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:12px;cursor:pointer;transition:.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='var(--muted)'">
+      Close Panel
+    </button>`;
+
+            document.getElementById('detail-panel').classList.add('open');
+            document.getElementById('panel-overlay').classList.add('open');
+        }
+
+        function closePanel() {
+            document.getElementById('detail-panel').classList.remove('open');
+            document.getElementById('panel-overlay').classList.remove('open');
+        }
+
+        function updateStatus(val) {
+            addLog('JIRA', `Status update requested: ${val}`, 'info');
+            showToast('Status Update', `Ticket moved to "${val}"`, 'success');
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           TICKET FILTER
+        ───────────────────────────────────────────────────────────────────────────── */
+        function filterTickets(filter, btn) {
+            state.currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            document.querySelectorAll('.ticket-card').forEach(card => {
+                const p = card.dataset.priority || 'medium';
+                const match = filter === 'all' || p === filter || (filter === 'critical' && p === 'highest');
+                card.style.display = match ? '' : 'none';
+            });
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           VIEW NAVIGATION
+        ───────────────────────────────────────────────────────────────────────────── */
+        function setView(view) {
+            ['dashboard', 'events', 'tickets'].forEach(v => {
+                document.getElementById(`view-${v}`).style.display = v === view ? '' : 'none';
+                document.getElementById(`pill-${v}`).classList.toggle('active', v === view);
+            });
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           LOGOUT
+        ───────────────────────────────────────────────────────────────────────────── */
+        function logout() {
+            localStorage.clear();
+            sessionStorage.setItem('logged_out', '1');
+            window.location.replace('login.html');
+        }
+
+        function switchProject() {
+            window.location.href = 'projects.html';
+        }
+
+        // Show active project name in header
+        const activeProjName = localStorage.getItem('active_project_name');
+        if (activeProjName) {
+            const el = document.getElementById('active-project-name');
+            if (el) el.textContent = activeProjName;
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           LOAD SAVED STATS (Login ke baad purana data restore karo)
+        ───────────────────────────────────────────────────────────────────────────── */
+        async function loadSavedStats() {
+            try {
+                const token = localStorage.getItem('token');
+                const pid = localStorage.getItem('active_project_id');
+                const statsUrl = pid
+                    ? `http://127.0.0.1:8000/api/stats?project_id=${pid}`
+                    : 'http://127.0.0.1:8000/api/stats';
+                const res = await fetch(statsUrl, {
+                    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Counts restore karo
+                state.git = data.git_events || 0;
+                state.jira = data.jira_tickets || 0;
+                state.slack = data.slack_alerts || 0;
+
+                document.getElementById('stat-events').textContent = state.git;
+                document.getElementById('stat-tickets').textContent = state.jira;
+                document.getElementById('stat-slack').textContent = state.slack;
+
+                document.getElementById('stat-events-sub').textContent = `${state.git} events processed`;
+                document.getElementById('stat-tickets-sub').textContent = `${state.jira} auto-created today`;
+                document.getElementById('stat-slack-sub').textContent = `${state.slack} notifications sent`;
+
+                // Activity feed restore karo
+                if (data.activities && data.activities.length > 0) {
+                    const emptyEl = document.querySelector('#activity-feed .empty-state');
+                    if (emptyEl) emptyEl.remove();
+
+                    data.activities.forEach(a => {
+                        addActivityEvent(a.type, a.message, a.priority, a.time);
+                    });
+                }
+
+                addLog('SYS', `Stats loaded: Git=${state.git} Jira=${state.jira} Slack=${state.slack}`, 'success');
+            } catch (e) {
+                addLog('SYS', 'Could not load saved stats', 'warn');
+            }
+        }
+
+        /* ─────────────────────────────────────────────────────────────────────────────
+           INIT
+        ───────────────────────────────────────────────────────────────────────────── */
+        loadSavedStats();
+        connectWebSocket();
+    </script>
+</body>
+
+</html>

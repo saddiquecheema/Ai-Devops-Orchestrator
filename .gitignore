@@ -1,0 +1,31 @@
+# =============================================================================
+# Files that should NEVER be uploaded to GitHub
+# =============================================================================
+
+# Environment variables (contains your secrets!)
+.env
+
+# Python cache files (auto-generated, not needed in git)
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environment folder
+venv/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+devops.db

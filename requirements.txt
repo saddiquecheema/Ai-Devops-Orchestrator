@@ -1,0 +1,30 @@
+# --- Web Framework ---
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# --- LangChain / AI ---
+langchain-core==0.3.45
+langchain-groq==0.2.4
+langgraph==0.2.76
+
+# --- HTTP ---
+httpx==0.27.2
+
+# --- Config ---
+pydantic==2.9.2
+pydantic-settings==2.5.2
+python-dotenv==1.0.1
+
+# --- Logging ---
+loguru==0.7.2
+
+# --- Auth (JWT + Password Hashing) ---
+bcrypt==4.1.3
+python-jose[cryptography]==3.3.0
+python-multipart==0.0.9
+
+# --- Testing ---
+pytest==8.3.3
+pytest-asyncio==0.24.0
+
+

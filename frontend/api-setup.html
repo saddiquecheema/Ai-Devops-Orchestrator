@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Setup — DevOps Orchestrator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Figtree:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Figtree', sans-serif;
+            background: #080c14;
+            color: #e2eaf4;
+            margin: 0;
+        }
+
+        .card {
+            background: #0d1320;
+            border: 1px solid #1c2a3a;
+            border-radius: 14px;
+        }
+
+        .section-card {
+            background: #111927;
+            border: 1px solid #1c2a3a;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .form-input {
+            background: #0d1320;
+            border: 1px solid #1c2a3a;
+            color: white;
+            padding: 9px 13px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+            transition: .2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .form-input::placeholder {
+            color: #3a5070;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #5a7090;
+            margin-bottom: 5px;
+            letter-spacing: .4px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            width: 100%;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: .2s;
+        }
+
+        .btn-primary:hover {
+            opacity: .9;
+            transform: translateY(-1px);
+        }
+
+        .help-btn {
+            background: transparent;
+            border: 1px solid #1c2a3a;
+            border-radius: 6px;
+            color: #5a7090;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 10px;
+            cursor: pointer;
+            transition: .2s;
+            white-space: nowrap;
+        }
+
+        .help-btn:hover {
+            border-color: #3b82f6;
+            color: #60a5fa;
+            background: rgba(59, 130, 246, .08);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, .7);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: .2s;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal {
+            background: #0d1320;
+            border: 1px solid #1c2a3a;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 520px;
+            max-height: 85vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            transition: .2s;
+        }
+
+        .modal-overlay.open .modal {
+            transform: translateY(0);
+        }
+
+        .step {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #1c2a3a;
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-num {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .step-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #a0b4c8;
+        }
+
+        .step-text b {
+            color: #e2eaf4;
+        }
+
+        .step-text a {
+            color: #60a5fa;
+            text-decoration: underline;
+        }
+
+        .step-text code {
+            background: #1c2a3a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            color: #c084fc;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #0d1320;
+            border: 1px solid #1c2a3a;
+            border-radius: 12px;
+            padding: 14px 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            z-index: 999;
+            animation: slideUp .3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .badge-step {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0d1320;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #1c2a3a;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen py-10 px-4">
+
+    <!-- Header -->
+    <div class="max-w-2xl mx-auto mb-8 text-center">
+        <div
+            style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 16px;box-shadow:0 4px 24px rgba(59,130,246,.4);">
+            ⚡</div>
+        <h1 style="font-size:24px;font-weight:700;margin-bottom:6px;">API Configuration</h1>
+        <p style="color:#5a7090;font-size:14px;">Configure API credentials for this project — saved securely and
+            reusable</p>
+    </div>
+
+    <div class="card max-w-2xl mx-auto p-6">
+
+        <!-- GitHub -->
+        <div class="section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <div
+                    style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#60a5fa;">
+                    <span class="badge-step" style="background:rgba(59,130,246,.15);color:#60a5fa;">1</span>
+                    GitHub Configuration
+                </div>
+                <button class="help-btn" onclick="openModal('github')">? How to get this</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label>Personal Access Token</label>
+                    <input type="password" id="github_token" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div>
+                    <label>Webhook Secret</label>
+                    <input type="password" id="github_webhook_secret" class="form-input"
+                        placeholder="Your webhook secret string">
+                </div>
+            </div>
+        </div>
+
+        <!-- Slack -->
+        <div class="section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <div
+                    style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#4ade80;">
+                    <span class="badge-step" style="background:rgba(34,197,94,.15);color:#4ade80;">2</span>
+                    Slack Configuration
+                </div>
+                <button class="help-btn" onclick="openModal('slack')">? How to get this</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label>Bot Token</label>
+                    <input type="password" id="slack_bot_token" class="form-input"
+                        placeholder="xoxb-xxxxxxxxxxxxxxxxxxxx">
+                </div>
+                <div>
+                    <label>Signing Secret</label>
+                    <input type="password" id="slack_signing_secret" class="form-input"
+                        placeholder="Slack signing secret">
+                </div>
+                <div>
+                    <label>Default Channel</label>
+                    <input type="text" id="slack_channel" class="form-input" placeholder="#automation-alert">
+                </div>
+            </div>
+        </div>
+
+        <!-- Jira -->
+        <div class="section-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                <div
+                    style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#fbbf24;">
+                    <span class="badge-step" style="background:rgba(245,158,11,.15);color:#fbbf24;">3</span>
+                    Jira Configuration
+                </div>
+                <button class="help-btn" onclick="openModal('jira')">? How to get this</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label>Base URL</label>
+                    <input type="text" id="jira_base_url" class="form-input"
+                        placeholder="https://yourcompany.atlassian.net">
+                </div>
+                <div>
+                    <label>Email</label>
+                    <input type="email" id="jira_email" class="form-input" placeholder="you@company.com">
+                </div>
+                <div>
+                    <label>API Token</label>
+                    <input type="password" id="jira_api_token" class="form-input" placeholder="ATATT3xFf...">
+                </div>
+                <div>
+                    <label>Project Key</label>
+                    <input type="text" id="jira_project_key" class="form-input" placeholder="SCRUM">
+                </div>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-top:4px;">
+            <button onclick="window.location.href='projects.html'"
+                style="flex:0 0 auto;background:transparent;border:1px solid #1c2a3a;border-radius:10px;padding:12px 20px;font-weight:600;font-size:14px;color:#5a7090;cursor:pointer;transition:.2s;"
+                onmouseover="this.style.borderColor='#3b82f6';this.style.color='#60a5fa'"
+                onmouseout="this.style.borderColor='#1c2a3a';this.style.color='#5a7090'">
+                ← Back to Projects
+            </button>
+            <button class="btn-primary" onclick="saveCredentials()" style="flex:1;">
+                Save & Continue to Dashboard →
+            </button>
+        </div>
+    </div>
+
+    <!-- ── MODAL ─────────────────────────────────────────────────────────── -->
+    <div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+        <div class="modal" id="modal-box">
+            <div
+                style="padding:20px 24px;border-bottom:1px solid #1c2a3a;display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <div id="modal-title" style="font-size:15px;font-weight:700;"></div>
+                    <div id="modal-subtitle" style="font-size:12px;color:#5a7090;margin-top:2px;"></div>
+                </div>
+                <button onclick="closeModal()"
+                    style="background:rgba(255,255,255,.05);border:1px solid #1c2a3a;border-radius:8px;padding:6px 10px;color:#5a7090;cursor:pointer;font-size:13px;">✕
+                    Close</button>
+            </div>
+            <div id="modal-body" style="padding:20px 24px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ── Auth check ────────────────────────────────────────────────────
+        const token = localStorage.getItem('token');
+        if (!token) window.location.replace('login.html');
+
+        // ── Get project from URL ──────────────────────────────────────────
+        const params = new URLSearchParams(window.location.search);
+        const projectId = params.get('project_id') || localStorage.getItem('active_project_id');
+        const projectName = decodeURIComponent(params.get('project_name') || localStorage.getItem('active_project_name') || 'Project');
+
+        // Show project name in subtitle
+        window.addEventListener('DOMContentLoaded', () => {
+            const subtitle = document.querySelector('.max-w-2xl p');
+            if (subtitle) subtitle.textContent = `Configuring API credentials for: ${projectName}`;
+        });
+
+        // ── Help content ──────────────────────────────────────────────────
+        const helpContent = {
+            github: {
+                title: '🐙 GitHub Configuration',
+                subtitle: 'Personal Access Token + Webhook Secret kaise banayein',
+                steps: [
+                    {
+                        num: '1', color: '#60a5fa', bg: 'rgba(59,130,246,.15)',
+                        html: '<b>GitHub.com</b> — log in'
+                    },
+                    {
+                        num: '2', color: '#60a5fa', bg: 'rgba(59,130,246,.15)',
+                        html: 'Top-right corner mein click your <b>profile photo</b> → <b>Settings</b>'
+                    },
+                    {
+                        num: '3', color: '#60a5fa', bg: 'rgba(59,130,246,.15)',
+                        html: 'Scroll to the bottom of the left sidebar <b>Developer settings</b> click'
+                    },
+                    {
+                        num: '4', color: '#60a5fa', bg: 'rgba(59,130,246,.15)',
+                        html: '<b>Personal access tokens</b> → <b>Tokens (classic)</b> → <b>Generate new token</b>'
+                    },
+                    {
+                        num: '5', color: '#60a5fa', bg: 'rgba(59,130,246,.15)',
+                        html: 'Note mein kuch bhi likho, Expiration: <code>No expiration</code>, Scopes select the following: <code>repo</code>, <code>write:repo_hook</code>'
+                    },
+                    {
+                        num: '6', color: '#60a5fa', bg: 'rgba(59,130,246,.15)',
+                        html: '<b>Generate token</b> click — copy the token — <b>it will not be shown again!</b>'
+                    },
+                    {
+                        num: '7', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: '<b>Webhook Secret:</b> Your repository → <b>Settings</b> → <b>Webhooks</b> → <b>Add webhook</b> → Payload URL mein apna ngrok URL daalo, Secret mein enter any random string — paste the same value here'
+                    },
+                ]
+            },
+            slack: {
+                title: '💬 Slack Configuration',
+                subtitle: 'Bot Token + Signing Secret kaise lein',
+                steps: [
+                    {
+                        num: '1', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: '<a href="https://api.slack.com/apps" target="_blank">api.slack.com/apps</a> to go there'
+                    },
+                    {
+                        num: '2', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: '<b>Create New App</b> → <b>From scratch</b> → App name aur workspace select karo'
+                    },
+                    {
+                        num: '3', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: 'In the left menu, click <b>OAuth & Permissions</b> → <b>Scopes</b> add the following scopes: <code>chat:write</code>, <code>channels:read</code>, <code>channels:join</code>'
+                    },
+                    {
+                        num: '4', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: 'Click <b>Install to Workspace</b> at the top click '
+                    },
+                    {
+                        num: '5', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: '<b>Bot User OAuth Token</b> copy it — it starts with <code>xoxb-</code> — paste it here'
+                    },
+                    {
+                        num: '6', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: 'Go to <b>Basic Information</b> → <b>App Credentials</b> → copy the <b>Signing Secret</b>'
+                    },
+                    {
+                        num: '7', color: '#4ade80', bg: 'rgba(34,197,94,.15)',
+                        html: '<b>Channel:</b> Create a Slack channel such as <code>#automation-alert</code>, then add your bot to that channel by typing: <code>/invite @YourBotName</code>'
+                    },
+                ]
+            },
+            jira: {
+                title: '📋 Jira Configuration',
+                subtitle: 'Atlassian API Token + Project Key kaise lein',
+                steps: [
+                    {
+                        num: '1', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: '<a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank">id.atlassian.com/manage-profile/security/api-tokens</a> to go there'
+                    },
+                    {
+                        num: '2', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: '<b>Create API token</b> click → Enter any label → <b>Create</b>'
+                    },
+                    {
+                        num: '3', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: 'Copy the token — it is shown <b>only once</b>'
+                    },
+                    {
+                        num: '4', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: '<b>Base URL:</b> Your Atlassian domain, jaise <code>https://yourname.atlassian.net</code>'
+                    },
+                    {
+                        num: '5', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: '<b>Email:</b> The email address linked to your Atlassian account'
+                    },
+                    {
+                        num: '6', color: '#fbbf24', bg: 'rgba(245,158,11,.15)',
+                        html: '<b>Project Key:</b> Open your Jira project — a short code like <code>SCRUM</code> appears in the URL or board header — enter that here'
+                    },
+                ]
+            },
+            groq: {
+                title: '🤖 Groq AI Configuration',
+                subtitle: 'Free Groq API Key kaise banayein',
+                steps: [
+                    {
+                        num: '1', color: '#c084fc', bg: 'rgba(168,85,247,.15)',
+                        html: '<a href="https://console.groq.com" target="_blank">console.groq.com</a> to go there'
+                    },
+                    {
+                        num: '2', color: '#c084fc', bg: 'rgba(168,85,247,.15)',
+                        html: '<b>Sign Up</b> karo — Google account se bhi ho sakta hai (bilkul free)'
+                    },
+                    {
+                        num: '3', color: '#c084fc', bg: 'rgba(168,85,247,.15)',
+                        html: 'After logging in, go to the <b>API Keys</b> section'
+                    },
+                    {
+                        num: '4', color: '#c084fc', bg: 'rgba(168,85,247,.15)',
+                        html: '<b>Create API Key</b> click → Enter a name → <b>Submit</b>'
+                    },
+                    {
+                        num: '5', color: '#c084fc', bg: 'rgba(168,85,247,.15)',
+                        html: 'Copy the key — it starts with <code>gsk_</code> — paste it here'
+                    },
+                    {
+                        num: '6', color: '#c084fc', bg: 'rgba(168,85,247,.15)',
+                        html: '<b>Free tier</b> includes sufficient requests for a demo — no credit card required!'
+                    },
+                ]
+            }
+        };
+
+        function openModal(type) {
+            const content = helpContent[type];
+            document.getElementById('modal-title').textContent = content.title;
+            document.getElementById('modal-subtitle').textContent = content.subtitle;
+
+            let html = '';
+            content.steps.forEach(step => {
+                html += `
+                <div class="step">
+                    <div class="step-num" style="background:${step.bg};color:${step.color};">${step.num}</div>
+                    <div class="step-text">${step.html}</div>
+                </div>`;
+            });
+
+            document.getElementById('modal-body').innerHTML = html;
+            document.getElementById('modal-overlay').classList.add('open');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('open');
+        }
+
+        function closeModalOutside(e) {
+            if (e.target === document.getElementById('modal-overlay')) closeModal();
+        }
+
+        // ── Save credentials ──────────────────────────────────────────────
+        async function saveCredentials() {
+            const btn = document.querySelector('.btn-primary');
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            const payload = {
+                github_token: document.getElementById('github_token').value,
+                github_webhook_secret: document.getElementById('github_webhook_secret').value,
+                slack_bot_token: document.getElementById('slack_bot_token').value,
+                slack_signing_secret: document.getElementById('slack_signing_secret').value,
+                slack_channel: document.getElementById('slack_channel').value,
+                jira_base_url: document.getElementById('jira_base_url').value,
+                jira_email: document.getElementById('jira_email').value,
+                jira_api_token: document.getElementById('jira_api_token').value,
+                jira_project_key: document.getElementById('jira_project_key').value,
+            };
+
+            Object.keys(payload).forEach(k => { if (!payload[k]) delete payload[k]; });
+
+            try {
+                const url = projectId
+                    ? `http://127.0.0.1:8000/api/projects/${projectId}/credentials`
+                    : `http://127.0.0.1:8000/api/credentials/save`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    showToast('✅', 'Credentials saved! Redirecting to dashboard...', '#4ade80');
+                    setTimeout(() => window.location.replace('index.html'), 1500);
+                } else {
+                    showToast('❌', 'Failed to save. Please try again.', '#f87171');
+                    btn.textContent = 'Save & Continue to Dashboard →';
+                    btn.disabled = false;
+                }
+            } catch (e) {
+                showToast('❌', 'Unable to connect to server.', '#f87171');
+                btn.textContent = 'Save & Continue to Dashboard →';
+                btn.disabled = false;
+            }
+        }
+
+        function showToast(icon, msg, color) {
+            const t = document.createElement('div');
+            t.className = 'toast';
+            t.innerHTML = `<span style="font-size:18px;">${icon}</span><span style="color:${color}">${msg}</span>`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+
+</html>
